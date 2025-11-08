@@ -109,7 +109,7 @@ To test the mint functionality:
 ## Contract Deployment
 
 The SimpleConfidentialNFT contract is deployed at:
-- **Address**: `0x46E743036f34038A207b84751415f865C85CA780`
+- **Address**: `0x66CC4784E96980bd2aa41CFF4C967E8f9CC0A816`
 - **Network**: Sepolia (Chain ID: 11155111)
 - **Block**: 9582626
 

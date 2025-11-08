@@ -57,81 +57,75 @@ contract SimpleConfidentialNFT is SepoliaConfig, Ownable2Step {
     ) external onlyOwner returns (uint256) {
         uint256 tokenId = _nextTokenId++;
 
-        _encryptedOwners[tokenId] = FHE.fromExternal(encryptedOwner, inputProof);
+        eaddress owner = FHE.fromExternal(encryptedOwner, inputProof);
+        _encryptedOwners[tokenId] = owner;
         _publicTokenURIs[tokenId] = publicURI;
         _encryptedTokenURIs[tokenId] = encryptedURI;
         _allTokens.push(tokenId);
 
-        // Grant owner permission to decrypt the owner address
-        FHE.allow(_encryptedOwners[tokenId], owner());
+        // Grant permissions
+        FHE.allowThis(owner);
+        FHE.allow(owner, msg.sender);
 
         emit NFTMinted(tokenId, publicURI, encryptedURI);
 
         return tokenId;
     }
 
-    /// @notice Transfer NFT with encrypted owner address and input proof
+    /// @notice Transfer NFT to encrypted recipient
     /// @param tokenId The token to transfer
-    /// @param to The recipient address
-    /// @param encryptedTo The encrypted address of the recipient
+    /// @param to The recipient address in plaintext (for verification and event emission)
+    /// @param encryptedTo The encrypted address of the recipient  
     /// @param inputProof The proof for the encrypted address
+    /// @dev Only the current token owner can transfer
     function confidentialTransfer(
         uint256 tokenId,
         address to,
         externalEaddress encryptedTo,
         bytes calldata inputProof
     ) public virtual {
-        _transfer(tokenId, msg.sender, to, FHE.fromExternal(encryptedTo, inputProof));
-    }
-
-    /// @notice Transfer NFT using already encrypted address
-    /// @param tokenId The token to transfer
-    /// @param to The recipient address
-    /// @param encryptedTo The encrypted address (must be allowed for msg.sender)
-    function confidentialTransfer(uint256 tokenId, address to, eaddress encryptedTo) public virtual {
-        require(FHE.isAllowed(encryptedTo, msg.sender), UnauthorizedCaller(msg.sender));
-        _transfer(tokenId, msg.sender, to, encryptedTo);
-    }
-
-    /// @dev Internal transfer function
-    function _transfer(uint256 tokenId, address from, address to, eaddress encryptedTo) internal virtual {
         require(_exists(tokenId), TokenDoesNotExist(tokenId));
-        require(from != address(0), InvalidSender(address(0)));
         require(to != address(0), InvalidReceiver(address(0)));
 
-        _update(tokenId, from, to, encryptedTo);
-    }
-
-    /// @dev Internal update function that handles the actual transfer logic
-    function _update(uint256 tokenId, address from, address to, eaddress encryptedTo) internal virtual {
-        // Verify caller is the current owner
+        // Get current encrypted owner
         eaddress currentOwner = _encryptedOwners[tokenId];
-        ebool isOwner = FHE.eq(currentOwner, FHE.asEaddress(from));
+        require(FHE.isInitialized(currentOwner), UnauthorizedCaller(msg.sender));
 
-        // Verify encrypted address matches the recipient
-        ebool isValidRecipient = FHE.eq(encryptedTo, FHE.asEaddress(to));
+        // Check if caller is the current owner
+        ebool isOwner = FHE.eq(currentOwner, FHE.asEaddress(msg.sender));
+        
+        // Decrypt new owner address
+        eaddress newOwner = FHE.fromExternal(encryptedTo, inputProof);
+        
+        // Only update if caller is owner, otherwise keep current owner
+        // This will make the transfer fail silently if caller is not owner
+        // In a production system, you'd want to decrypt isOwner and revert
+        eaddress finalOwner = FHE.select(isOwner, newOwner, currentOwner);
+        _encryptedOwners[tokenId] = finalOwner;
 
-        // Both conditions must be true
-        ebool canTransfer = FHE.and(isOwner, isValidRecipient);
+        // Grant permissions to the final owner (whether changed or not)
+        FHE.allowThis(finalOwner);
+        FHE.allow(finalOwner, to);
+        FHE.allow(finalOwner, msg.sender);
+        FHE.allow(finalOwner, owner());
 
-        // This will revert if canTransfer is false
-        //require(FHE.decrypt(canTransfer), UnauthorizedCaller(from));
-
-        // Update to new owner
-        _encryptedOwners[tokenId] = encryptedTo;
-
-        // Grant permissions
-        FHE.allowThis(encryptedTo);
-        FHE.allow(encryptedTo, from);
-        FHE.allow(encryptedTo, to);
-
-        emit Transfer(tokenId, from, to);
+        emit Transfer(tokenId, msg.sender, to);
     }
 
     /// @notice Get the encrypted owner of a token
     function encryptedOwnerOf(uint256 tokenId) external view returns (eaddress) {
         require(_exists(tokenId), TokenDoesNotExist(tokenId));
         return _encryptedOwners[tokenId];
+    }
+
+    /// @notice Check if an address is the owner of a token (returns encrypted bool)
+    /// @param tokenId The token ID to check
+    /// @param account The address to check ownership for
+    /// @return An encrypted boolean indicating ownership
+    function isOwnerOf(uint256 tokenId, address account) external returns (ebool) {
+        require(_exists(tokenId), TokenDoesNotExist(tokenId));
+        eaddress currentOwner = _encryptedOwners[tokenId];
+        return FHE.eq(currentOwner, FHE.asEaddress(account));
     }
 
     /// @notice Get the public URI of a token

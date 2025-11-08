@@ -39,8 +39,8 @@ export const RainbowKitCustomConnectButton = () => {
               }
 
               return (
-                <>
-                  <div className="flex flex-col items-center mr-1 text-gray-900">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end text-gray-900">
                     <Balance address={account.address as Address} className="min-h-0 h-auto" />
                     <span className="text-xs text-gray-900">{chain.name}</span>
                   </div>
@@ -50,7 +50,7 @@ export const RainbowKitCustomConnectButton = () => {
                     ensAvatar={account.ensAvatar}
                     blockExplorerAddressLink={blockExplorerAddressLink}
                   />
-                </>
+                </div>
               );
             })()}
           </>

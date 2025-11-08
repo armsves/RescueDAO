@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useAccount, useReadContract } from "wagmi";
+import { useEffect, useMemo, useState } from "react";
+import { useFhevm } from "@fhevm-sdk";
 import { PinataSDK } from "pinata";
+import { useAccount, useReadContract } from "wagmi";
 import { RainbowKitCustomConnectButton } from "~~/components/helper/RainbowKitCustomConnectButton";
 import deployedContracts from "~~/contracts/deployedContracts";
+import { useNFTTransfer } from "~~/hooks/nft-mint/useNFTTransfer";
 
 // Initialize Pinata SDK
 const pinata = new PinataSDK({
@@ -100,6 +102,24 @@ export const NFTGallery = () => {
   const [nfts, setNfts] = useState<NFTCardData[]>([]);
   const [expandedTokenId, setExpandedTokenId] = useState<number | null>(null);
   const [medicalAccessLinks, setMedicalAccessLinks] = useState<Record<number, Record<string, string>>>({});
+  const [transferToAddress, setTransferToAddress] = useState<Record<number, string>>({});
+  const [showTransferForm, setShowTransferForm] = useState<Record<number, boolean>>({});
+
+  // Create EIP-1193 provider from window.ethereum for FHEVM
+  const provider = useMemo(() => {
+    if (typeof window === "undefined") return undefined;
+    return (window as any).ethereum;
+  }, []);
+
+  // Get fhEVM instance for encryption
+  const { instance } = useFhevm({
+    provider,
+    chainId,
+    enabled: isConnected,
+  });
+
+  // NFT Transfer hook
+  const { transferNFT, isTransferring, message: transferMessage } = useNFTTransfer({ instance });
 
   // Get contract address
   const contractAddress =
@@ -283,8 +303,48 @@ export const NFTGallery = () => {
     setExpandedTokenId(prev => (prev === tokenId ? null : tokenId));
   };
 
+  const toggleTransferForm = (tokenId: number) => {
+    setShowTransferForm(prev => ({
+      ...prev,
+      [tokenId]: !prev[tokenId],
+    }));
+  };
+
+  const handleTransfer = async (tokenId: number) => {
+    const toAddress = transferToAddress[tokenId];
+    
+    if (!toAddress?.trim()) {
+      alert("Please enter a recipient address");
+      return;
+    }
+
+    if (!instance) {
+      alert("FHE instance not ready. Please wait a moment and try again.");
+      return;
+    }
+    
+    try {
+      const result = await transferNFT(tokenId, toAddress);
+      
+      if (result?.success) {
+        alert("Transfer successful!");
+        // Clear the form
+        setTransferToAddress(prev => ({ ...prev, [tokenId]: "" }));
+        setShowTransferForm(prev => ({ ...prev, [tokenId]: false }));
+        // Refresh the gallery
+        setTimeout(() => {
+          refetchTokens();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Transfer error:", error);
+      alert(`Transfer failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
   const sectionClass = "bg-white shadow-lg p-6 mb-8 rounded-2xl border border-gray-100 text-gray-900";
-  const cardClass = "bg-white border border-gray-300 shadow-md hover:shadow-xl transition-shadow duration-300 p-4 rounded-2xl";
+  const cardClass =
+    "bg-white border border-gray-300 shadow-md hover:shadow-xl transition-shadow duration-300 p-4 rounded-2xl";
 
   if (!isConnected) {
     return (
@@ -505,6 +565,71 @@ export const NFTGallery = () => {
                   </div>
                 )}
               </div>
+
+              {/* Transfer Section - Only for owners */}
+              {nft.isOwner && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => toggleTransferForm(nft.tokenId)}
+                    className="w-full flex justify-between items-center py-2 px-3 bg-[#FFD208] hover:bg-[#E0B800] transition-colors rounded-lg"
+                  >
+                    <span className="font-medium text-sm text-[#2D2D2D]">🔄 Transfer NFT</span>
+                    <span className="text-[#2D2D2D]">{showTransferForm[nft.tokenId] ? "▼" : "▶"}</span>
+                  </button>
+
+                  {showTransferForm[nft.tokenId] && (
+                    <div className="mt-3 space-y-3 p-3 bg-[#FFF9E6] rounded-lg border border-[#FFD208]">
+                      <div>
+                        <label
+                          htmlFor={`transfer-to-${nft.tokenId}`}
+                          className="block text-xs font-medium text-gray-700 mb-1"
+                        >
+                          Recipient Address
+                        </label>
+                        <input
+                          id={`transfer-to-${nft.tokenId}`}
+                          type="text"
+                          value={transferToAddress[nft.tokenId] || ""}
+                          onChange={e => setTransferToAddress(prev => ({ ...prev, [nft.tokenId]: e.target.value }))}
+                          placeholder="0x..."
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#FFD208]"
+                          disabled={isTransferring}
+                        />
+                      </div>
+
+                      {transferMessage && (
+                        <div
+                          className={`p-2 rounded text-xs ${
+                            transferMessage.includes("failed") || transferMessage.includes("Error")
+                              ? "bg-red-50 text-red-800 border border-red-200"
+                              : "bg-green-50 text-green-800 border border-green-200"
+                          }`}
+                        >
+                          {transferMessage}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleTransfer(nft.tokenId)}
+                        disabled={isTransferring || !transferToAddress[nft.tokenId]?.trim() || !instance}
+                        className="w-full px-4 py-2 bg-[#2D2D2D] text-[#FFD208] rounded-lg font-semibold text-sm hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {!instance
+                          ? "⏳ Loading FHE..."
+                          : isTransferring
+                            ? "⏳ Transferring..."
+                            : "🚀 Confirm Transfer"}
+                      </button>
+
+                      <p className="text-xs text-gray-600">
+                        ⚠️ The recipient address will be encrypted using FHE. Make sure the address is correct before
+                        transferring.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

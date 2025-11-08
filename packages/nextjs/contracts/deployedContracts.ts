@@ -76,7 +76,7 @@ const deployedContracts = {
       deployedOnBlock: 9573436,
     },
     SimpleConfidentialNFT: {
-      address: "0x46E743036f34038A207b84751415f865C85CA780",
+      address: "0x95fb649a8AB03C02f8E3B3370E70e8b963C32b88",
       abi: [
         {
           inputs: [
@@ -295,29 +295,6 @@ const deployedContracts = {
               name: "tokenId",
               type: "uint256",
             },
-            {
-              internalType: "address",
-              name: "to",
-              type: "address",
-            },
-            {
-              internalType: "eaddress",
-              name: "encryptedTo",
-              type: "bytes32",
-            },
-          ],
-          name: "confidentialTransfer",
-          outputs: [],
-          stateMutability: "nonpayable",
-          type: "function",
-        },
-        {
-          inputs: [
-            {
-              internalType: "uint256",
-              name: "tokenId",
-              type: "uint256",
-            },
           ],
           name: "encryptedOwnerOf",
           outputs: [
@@ -360,6 +337,30 @@ const deployedContracts = {
             },
           ],
           stateMutability: "view",
+          type: "function",
+        },
+        {
+          inputs: [
+            {
+              internalType: "uint256",
+              name: "tokenId",
+              type: "uint256",
+            },
+            {
+              internalType: "address",
+              name: "account",
+              type: "address",
+            },
+          ],
+          name: "isOwnerOf",
+          outputs: [
+            {
+              internalType: "ebool",
+              name: "",
+              type: "bytes32",
+            },
+          ],
+          stateMutability: "nonpayable",
           type: "function",
         },
         {
@@ -515,7 +516,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deployedOnBlock: 9582626,
+      deployedOnBlock: 9585379,
     },
   },
 } as const;
