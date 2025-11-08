@@ -20,6 +20,7 @@ export const Header = () => {
   const navLinks = [
     { href: "/", label: "FHE Counter" },
     { href: "/nft-mint", label: "NFT Mint" },
+    { href: "/gallery", label: "Gallery" },
   ];
 
   return (

@@ -5,6 +5,13 @@ import { useFhevm } from "@fhevm-sdk";
 import { useAccount, useReadContract } from "wagmi";
 import { RainbowKitCustomConnectButton } from "~~/components/helper/RainbowKitCustomConnectButton";
 import { useNFTMint } from "~~/hooks/nft-mint/useNFTMint";
+import { PinataSDK } from "pinata";
+
+// Initialize Pinata SDK
+const pinata = new PinataSDK({
+  pinataJwt: process.env.NEXT_PUBLIC_PINATA_JWT!,
+  pinataGateway: process.env.NEXT_PUBLIC_GATEWAY_URL!,
+});
 
 /*
  * NFT Mint React component with a form to mint NFTs
@@ -15,7 +22,6 @@ import { useNFTMint } from "~~/hooks/nft-mint/useNFTMint";
  */
 export const NFTMintDemo = () => {
   const { isConnected, chain, address } = useAccount();
-
   const chainId = chain?.id;
 
   //////////////////////////////////////////////////////////////////////////////
@@ -24,6 +30,18 @@ export const NFTMintDemo = () => {
   const [ownerAddress, setOwnerAddress] = useState<string>("");
   const [publicURI, setPublicURI] = useState<string>("");
   const [encryptedURI, setEncryptedURI] = useState<string>("");
+
+  // New state for file uploads
+  const [publicMetadata, setPublicMetadata] = useState({
+    name: "",
+    age: "",
+    location: "",
+    picture: null as File | null,
+  });
+  const [medicalFiles, setMedicalFiles] = useState<File[]>([]);
+  const [uploadingPublic, setUploadingPublic] = useState(false);
+  const [uploadingPrivate, setUploadingPrivate] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   //////////////////////////////////////////////////////////////////////////////
   // FHEVM instance
@@ -102,6 +120,85 @@ export const NFTMintDemo = () => {
   const isFormValid = ownerAddress && publicURI && encryptedURI;
 
   //////////////////////////////////////////////////////////////////////////////
+  // File Upload Handlers
+  //////////////////////////////////////////////////////////////////////////////
+
+  const handlePublicMetadataUpload = async () => {
+    if (!publicMetadata.picture || !publicMetadata.name) {
+      setUploadStatus("❌ Please provide at least a name and picture");
+      return;
+    }
+
+    setUploadingPublic(true);
+    setUploadStatus("⏳ Uploading public metadata...");
+
+    try {
+      // Upload picture to Public IPFS
+      const pictureUpload = await pinata.upload.public.file(publicMetadata.picture);
+      const pictureUrl = `https://${process.env.NEXT_PUBLIC_GATEWAY_URL}/files/${pictureUpload.cid}`;
+
+      // Create metadata JSON
+      const metadata = {
+        name: publicMetadata.name,
+        age: publicMetadata.age,
+        location: publicMetadata.location,
+        image: pictureUrl,
+        description: `Pet NFT for ${publicMetadata.name}`,
+      };
+
+      // Upload metadata JSON to Public IPFS
+      const metadataUpload = await pinata.upload.public.json(metadata);
+      const metadataUri = `ipfs://${metadataUpload.cid}`;
+
+      setPublicURI(metadataUri);
+      setUploadStatus("✅ Public metadata uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading public metadata:", error);
+      setUploadStatus("❌ Error uploading public metadata");
+    } finally {
+      setUploadingPublic(false);
+    }
+  };
+
+  const handleMedicalFilesUpload = async () => {
+    if (medicalFiles.length === 0) {
+      setUploadStatus("❌ Please select medical files to upload");
+      return;
+    }
+
+    setUploadingPrivate(true);
+    setUploadStatus("⏳ Uploading medical records...");
+
+    try {
+      // Upload medical files to Private IPFS
+      const uploads = await Promise.all(medicalFiles.map(file => pinata.upload.private.file(file)));
+
+      // Create a JSON with all medical file CIDs
+      const medicalData = {
+        files: uploads.map((upload, index) => ({
+          name: medicalFiles[index].name,
+          cid: upload.cid,
+          size: upload.size,
+          type: medicalFiles[index].type,
+        })),
+        uploadDate: new Date().toISOString(),
+      };
+
+      // Upload the medical data index to Private IPFS
+      const medicalDataUpload = await pinata.upload.private.json(medicalData);
+      const encryptedUri = `ipfs://${medicalDataUpload.cid}`;
+
+      setEncryptedURI(encryptedUri);
+      setUploadStatus("✅ Medical records uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading medical files:", error);
+      setUploadStatus("❌ Error uploading medical records");
+    } finally {
+      setUploadingPrivate(false);
+    }
+  };
+
+  //////////////////////////////////////////////////////////////////////////////
   // UI Styles
   //////////////////////////////////////////////////////////////////////////////
 
@@ -172,6 +269,144 @@ export const NFTMintDemo = () => {
               </p>
               <p className="text-xs text-amber-700 mt-1">Your address: {address}</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Public Metadata Upload Section */}
+      <div className={sectionClass}>
+        <h3 className={titleClass}>🖼️ Upload Public Information</h3>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="petName" className={labelClass}>
+              Pet Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="petName"
+              type="text"
+              placeholder="Fluffy"
+              value={publicMetadata.name}
+              onChange={e => setPublicMetadata({ ...publicMetadata, name: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="petAge" className={labelClass}>
+                Age
+              </label>
+              <input
+                id="petAge"
+                type="text"
+                placeholder="3 years"
+                value={publicMetadata.age}
+                onChange={e => setPublicMetadata({ ...publicMetadata, age: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="petLocation" className={labelClass}>
+                Location
+              </label>
+              <input
+                id="petLocation"
+                type="text"
+                placeholder="New York"
+                value={publicMetadata.location}
+                onChange={e => setPublicMetadata({ ...publicMetadata, location: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="petPicture" className={labelClass}>
+              Picture <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="petPicture"
+              type="file"
+              accept="image/*"
+              onChange={e => setPublicMetadata({ ...publicMetadata, picture: e.target.files?.[0] || null })}
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-600 mt-1">Upload a picture of your pet (publicly visible)</p>
+          </div>
+
+          <button
+            onClick={handlePublicMetadataUpload}
+            disabled={uploadingPublic || !publicMetadata.name || !publicMetadata.picture}
+            className={primaryButtonClass}
+          >
+            {uploadingPublic ? "⏳ Uploading..." : "📤 Upload Public Metadata"}
+          </button>
+
+          {publicURI && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-sm text-green-800">✅ Public URI: {publicURI}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Medical Records Upload Section */}
+      <div className={sectionClass}>
+        <h3 className={titleClass}>🏥 Upload Medical Records (Private)</h3>
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="medicalFiles" className={labelClass}>
+              Medical Files <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="medicalFiles"
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={e => setMedicalFiles(Array.from(e.target.files || []))}
+              className={inputClass}
+            />
+            <p className="text-xs text-gray-600 mt-1">
+              Upload medical records like weight charts, blood test PDFs, vaccination records (stored privately)
+            </p>
+          </div>
+
+          {medicalFiles.length > 0 && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+              <p className="text-sm text-blue-800 font-medium mb-2">Selected files:</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                {medicalFiles.map((file, index) => (
+                  <li key={index}>
+                    📄 {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button
+            onClick={handleMedicalFilesUpload}
+            disabled={uploadingPrivate || medicalFiles.length === 0}
+            className={primaryButtonClass}
+          >
+            {uploadingPrivate ? "⏳ Uploading..." : "🔒 Upload Medical Records"}
+          </button>
+
+          {encryptedURI && (
+            <div className="p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-sm text-green-800">✅ Encrypted URI: {encryptedURI}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Upload Status */}
+      {uploadStatus && (
+        <div className={sectionClass}>
+          <h3 className={titleClass}>📊 Upload Status</h3>
+          <div className="border bg-white border-gray-200 p-4">
+            <p className="text-gray-800">{uploadStatus}</p>
           </div>
         </div>
       )}
