@@ -12,6 +12,55 @@ const pinata = new PinataSDK({
   pinataGateway: process.env.NEXT_PUBLIC_GATEWAY_URL!,
 });
 
+// Decorative arcade paw + pet icons
+const PawPrintSvg = ({ className = "w-24 h-24 text-black/8" }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} fill="currentColor" aria-hidden>
+    <path d="M32 44c-7 0-12 6-12 8s5 4 12 4 12-2 12-4-5-8-12-8zm-14-12c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6zm14-6c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6zm14 6c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6z" />
+  </svg>
+);
+
+const ArcadeDogSvg = ({ className = "w-12 h-12 text-[#2D2D2D]" }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} aria-hidden shapeRendering="crispEdges" preserveAspectRatio="xMidYMid meet">
+    <g fill="currentColor">
+      <rect x="6" y="4" width="6" height="10" />
+      <rect x="12" y="8" width="4" height="6" />
+      <rect x="34" y="4" width="6" height="10" />
+      <rect x="30" y="8" width="4" height="6" />
+      <rect x="10" y="14" width="20" height="10" />
+      <rect x="8" y="22" width="24" height="10" />
+      <rect x="28" y="20" width="18" height="8" />
+      <rect x="36" y="18" width="10" height="4" />
+      <rect x="44" y="16" width="6" height="4" />
+    </g>
+  </svg>
+);
+
+const ArcadeCatSvg = ({ className = "w-12 h-12 text-[#2D2D2D]" }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} aria-hidden shapeRendering="crispEdges" preserveAspectRatio="xMidYMid meet">
+    <g fill="currentColor">
+      <rect x="12" y="6" width="6" height="10" />
+      <rect x="34" y="6" width="6" height="10" />
+      <rect x="16" y="16" width="16" height="8" />
+      <rect x="14" y="22" width="20" height="8" />
+      <rect x="12" y="30" width="24" height="10" />
+      <rect x="10" y="40" width="20" height="8" />
+    </g>
+  </svg>
+);
+
+const ArcadeRabbitSvg = ({ className = "w-10 h-10 text-[#2D2D2D]" }: { className?: string }) => (
+  <svg viewBox="0 0 64 64" className={className} aria-hidden shapeRendering="crispEdges" preserveAspectRatio="xMidYMid meet">
+    <g fill="currentColor">
+      <rect x="22" y="4" width="4" height="10" />
+      <rect x="28" y="4" width="4" height="10" />
+      <rect x="18" y="14" width="16" height="10" />
+      <rect x="14" y="24" width="24" height="12" />
+      <rect x="16" y="36" width="6" height="6" />
+      <rect x="30" y="36" width="6" height="6" />
+    </g>
+  </svg>
+);
+
 interface NFTMetadata {
   name?: string;
   age?: string;
@@ -234,15 +283,17 @@ export const NFTGallery = () => {
     setExpandedTokenId(prev => (prev === tokenId ? null : tokenId));
   };
 
-  const sectionClass = "bg-[#f4f4f4] shadow-lg p-6 mb-6 text-gray-900";
-  const titleClass = "font-bold text-gray-900 text-xl mb-4 border-b-1 border-gray-700 pb-2";
-  const cardClass = "bg-white border border-gray-300 shadow-md hover:shadow-xl transition-shadow duration-200 p-4";
+  const sectionClass = "bg-white shadow-lg p-6 mb-8 rounded-2xl border border-gray-100 text-gray-900";
+  const cardClass = "bg-white border border-gray-300 shadow-md hover:shadow-xl transition-shadow duration-300 p-4 rounded-2xl";
 
   if (!isConnected) {
     return (
-      <div className="max-w-6xl mx-auto p-6 text-gray-900">
-        <div className="flex items-center justify-center">
-          <div className="bg-white shadow-xl p-8 text-center">
+      <div className="relative max-w-6xl mx-auto p-6 space-y-10 bg-gray-50 min-h-screen">
+        <div className="absolute inset-0 pointer-events-none -z-10">
+          <div className="absolute inset-0 bg-gradient-to-b from-[#FFF9E6] via-[#FFF3CC] to-[#F8F4E6] opacity-60" />
+        </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="bg-white shadow-xl p-8 text-center rounded-2xl border border-gray-100">
             <div className="mb-4">
               <span className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-amber-900/30 text-amber-400 text-3xl">
                 ⚠️
@@ -260,15 +311,71 @@ export const NFTGallery = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6 text-gray-900">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <button
-          onClick={() => refetchTokens()}
-          className="mt-4 px-4 py-2 bg-[#FFD208] text-[#2D2D2D] hover:bg-[#A38025] font-semibold shadow-md transition-all"
-        >
-          🔄 Refresh Gallery
-        </button>
+    <div className="relative max-w-7xl mx-auto p-6 space-y-10 bg-gray-50 min-h-screen">
+      {/* subtle yellow tint + repeating paw texture behind the page */}
+      <div className="absolute inset-0 pointer-events-none -z-10">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FFF9E6] via-[#FFF3CC] to-[#F8F4E6] opacity-60" />
+        <div
+          className="absolute inset-0 bg-repeat opacity-30"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>%3Cpath fill='%23FFD208' opacity='0.06' d='M32 44c-7 0-12 6-12 8s5 4 12 4 12-2 12-4-5-8-12-8zm-14-12c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6zm14-6c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6zm14 6c-3 0-6 3-6 6s3 6 6 6 6-3 6-6-3-6-6-6z'/%3E%3C/svg%3E\")",
+            backgroundSize: "160px 160px",
+          }}
+        />
+      </div>
+
+      {/* Hero Header */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#FFD208] via-[#FFE883] to-[#FFF9D1] border border-[#F6D75A] shadow-xl">
+        <div className="absolute -top-12 -right-10 h-36 w-36 rounded-full bg-white/30" />
+        <div className="absolute -bottom-14 -left-6 h-40 w-40 rounded-full bg-white/20" />
+        
+        {/* Decorative pet icons */}
+        <div className="absolute -top-8 -right-12 pointer-events-none transform rotate-6 opacity-20">
+          <ArcadeDogSvg className="w-64 h-64" />
+        </div>
+        <div className="absolute -bottom-14 -left-12 pointer-events-none transform -rotate-6 opacity-16">
+          <ArcadeCatSvg className="w-56 h-56" />
+        </div>
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 pointer-events-none transform rotate-3 opacity-12">
+          <ArcadeRabbitSvg className="w-48 h-48" />
+        </div>
+        
+        {/* Paw prints */}
+        <div className="absolute top-6 left-6 pointer-events-none opacity-5">
+          <PawPrintSvg className="w-28 h-28" />
+        </div>
+        <div className="absolute bottom-8 right-20 pointer-events-none opacity-6">
+          <PawPrintSvg className="w-20 h-20" />
+        </div>
+        
+        <div className="relative px-8 py-10">
+          <div className="flex flex-wrap items-center gap-3 text-sm font-semibold text-[#2D2D2D]">
+            <span className="inline-flex items-center gap-2 bg-white/70 backdrop-blur px-4 py-2 rounded-full border border-white/60 shadow-sm text-[11px]">
+              <span role="img" aria-label="gallery" className="text-lg">
+                🖼️
+              </span>
+              <span className="normal-case">RescueDAO</span> NFT Gallery
+            </span>
+            <span className="inline-flex items-center gap-2 bg-[#2D2D2D] text-[#FFD208] px-4 py-2 rounded-full border border-black/20 shadow-sm text-xs font-bold uppercase tracking-wide">
+              {nfts.length} NFT{nfts.length === 1 ? "" : "s"}
+            </span>
+          </div>
+          <h1 className="mt-5 text-4xl md:text-[42px] font-extrabold tracking-tight text-[#2D2D2D]">
+            <span className="normal-case">RescueDAO</span> — NFT Gallery
+          </h1>
+          <p className="mt-3 max-w-2xl text-base sm:text-lg text-[#3F3F3F]">
+            Browse all minted Pet NFTs with their public information and private medical records (owner access only).
+          </p>
+          <div className="mt-6">
+            <button
+              onClick={() => refetchTokens()}
+              className="inline-flex items-center justify-center px-6 py-3 font-semibold text-lg shadow-lg transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 rounded-xl bg-[#FFD208] text-[#2D2D2D] hover:bg-[#E0B800] focus-visible:ring-[#E0B800]"
+            >
+              🔄 Refresh Gallery
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* NFT Grid */}
