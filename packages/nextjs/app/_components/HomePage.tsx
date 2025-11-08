@@ -86,6 +86,29 @@ export const HomePage = () => {
     },
   ];
 
+  const donationFeatures = [
+    {
+      icon: "❤️",
+      title: "Direct Donations",
+      description: "Support registered animal shelters directly with USDC donations through our transparent system.",
+    },
+    {
+      icon: "🔄",
+      title: "Recurring Support",
+      description: "Set up recurring donations on a daily, weekly, or monthly schedule to provide sustained support.",
+    },
+    {
+      icon: "👑",
+      title: "Admin Management",
+      description: "Administrators can register new shelters and configure the donation platform settings.",
+    },
+    {
+      icon: "🐾",
+      title: "Shelter Dashboard",
+      description: "Shelters can manage their pet listings, track donations received, and withdraw funds.",
+    },
+  ];
+
   const useCases = [
     {
       emoji: "🏠",
@@ -185,6 +208,9 @@ export const HomePage = () => {
               <Link href="/gallery" className={secondaryButtonClass}>
                 🖼️ View Gallery
               </Link>
+              <Link href="/donate" className={primaryButtonClass}>
+                ❤️ Support Shelters
+              </Link>
             </div>
 
             <div className="flex items-center gap-4">
@@ -218,6 +244,38 @@ export const HomePage = () => {
                 <p className="text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* Donation System */}
+        <section className="space-y-8">
+          <div className="text-center">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-[#2D2D2D] mb-4">❤️ Support Shelters</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Make a direct impact by donating to registered animal shelters through our transparent donation platform.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {donationFeatures.map((feature, index) => (
+              <div
+                key={index}
+                className="bg-gradient-to-br from-[#FFD208] to-[#FFE883] p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 border border-[#F6D75A]"
+              >
+                <div className="text-5xl mb-4">{feature.icon}</div>
+                <h3 className="text-xl font-bold text-[#2D2D2D] mb-3">{feature.title}</h3>
+                <p className="text-[#3F3F3F] leading-relaxed">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="bg-white shadow-lg rounded-2xl border border-gray-100 p-6 text-center">
+            <p className="text-gray-700 mb-4">
+              Ready to make a difference? Start donating to registered shelters and help rescue animals in need.
+            </p>
+            <Link href="/donate" className={primaryButtonClass}>
+              ❤️ Go to Donation Portal
+            </Link>
           </div>
         </section>
 

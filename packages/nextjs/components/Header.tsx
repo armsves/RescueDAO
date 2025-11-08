@@ -28,6 +28,10 @@ export const Header = () => {
     { href: "/", label: "Home", icon: "🏠" },
     { href: "/nft-mint", label: "NFT Mint", icon: "🎨" },
     { href: "/gallery", label: "Gallery", icon: "🖼️" },
+    { href: "/donate", label: "Donate", icon: "❤️" },
+    { href: "/admin", label: "Admin", icon: "👑" },
+    { href: "/donor", label: "Donor", icon: "🤝" },
+    { href: "/shelter", label: "Shelter", icon: "🐾" },
   ];
 
   return (
@@ -41,9 +45,7 @@ export const Header = () => {
                 <PawIconSvg className="w-6 h-6 text-[#FFD208]" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-extrabold text-[#2D2D2D] leading-tight tracking-tight">
-                  RescueDAO
-                </span>
+                <span className="text-xl font-extrabold text-[#2D2D2D] leading-tight tracking-tight">RescueDAO</span>
                 <span className="text-[10px] text-[#3F3F3F] uppercase tracking-wider font-semibold">
                   Pet NFT Platform
                 </span>
@@ -94,11 +96,7 @@ export const Header = () => {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className={`rounded-lg font-semibold ${
-                        pathname === link.href
-                          ? "bg-[#FFD208] text-[#2D2D2D]"
-                          : "text-gray-700 hover:bg-[#FFF9E6]"
-                      }`}
+                      className={`rounded-lg font-semibold ${pathname === link.href ? "bg-[#FFD208] text-[#2D2D2D]" : "text-gray-700 hover:bg-[#FFF9E6]"}`}
                     >
                       <span>{link.icon}</span>
                       {link.label}
