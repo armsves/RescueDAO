@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd packages/nextjs && pnpm install && pnpm build",
+  "buildCommand": "pnpm install && pnpm --filter ./packages/nextjs build",
   "installCommand": "pnpm install",
   "framework": null,
   "outputDirectory": "packages/nextjs/.next"
