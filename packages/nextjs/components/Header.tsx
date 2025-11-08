@@ -15,7 +15,7 @@ const PawIconSvg = ({ className = "w-6 h-6" }: { className?: string }) => (
 
 /**
  * Site header
- */
+ */ 
 export const Header = () => {
   const burgerMenuRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
